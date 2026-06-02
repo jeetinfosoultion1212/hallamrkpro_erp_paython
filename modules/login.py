@@ -5,6 +5,7 @@ import os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from utils.auth import login
+from modules.register import RegisterWindow
 
 # ── Exact colours from screenshot ────────────────────────────────────────────
 BG_LEFT      = "#0d1b3e"   # deep navy left — dot grid panel
@@ -350,6 +351,7 @@ class LoginWindow(tk.Tk):
                        fg=ACCENT_BLUE, bg=BG_RIGHT,
                        cursor="hand2", font=self.fn(9))
         reg.pack(side="left", padx=20)
+        reg.bind("<Button-1>", lambda e: self._open_register())
 
         sup = tk.Label(links, text="💬  Support",
                        fg=ACCENT_GREEN, bg=BG_RIGHT,
@@ -403,3 +405,8 @@ class LoginWindow(tk.Tk):
     def _on_logout(self):
         self.deiconify()
         self.password_var.set("")
+
+    def _open_register(self):
+        self.withdraw()
+        reg_window = RegisterWindow(on_back_to_login=lambda: (reg_window.destroy(), self.deiconify()))
+        reg_window.protocol("WM_DELETE_WINDOW", lambda: (reg_window.destroy(), self.deiconify()))
