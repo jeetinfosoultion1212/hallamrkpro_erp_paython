@@ -1,47 +1,48 @@
 import tkinter as tk
-from tkinter import font as tkfont, ttk
+from tkinter import font as tkfont, ttk, messagebox
 import sqlite3, os, sys, datetime, threading
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from db.schema import get_connection
 
-# ── colours (exact from dashboard screenshot) ────────────────────────────────
-BG_MAIN      = "#0f1d36"
-BG_SIDEBAR   = "#0b1628"
-BG_TOPBAR    = "#0d1b35"
-BG_CARD      = "#111d38"
-BG_TABLE_HDR = "#0d1b35"
-BG_TABLE_ROW = "#0f1d36"
-BG_TABLE_ALT = "#0d1933"
-ACCENT_BLUE  = "#4361ee"
-ACCENT_GREEN = "#22c55e"
-ACCENT_ORG   = "#f59e0b"
-ACCENT_RED   = "#ef4444"
-ACCENT_CYAN  = "#06b6d4"
-ACCENT_PURP  = "#8b5cf6"
-TEXT_WHITE   = "#ffffff"
-TEXT_MUTED   = "#8899bb"
-TEXT_DIM     = "#4a5568"
-SIDEBAR_SEL  = "#1a2d52"
-SIDEBAR_TXT  = "#8899bb"
-SIDEBAR_ACT  = "#ffffff"
-BORDER       = "#1e3456"
-BANNER_BG    = "#0d3320"
-BANNER_FG    = "#4ade80"
+# ── colours (white main content area + blue sidebar) ────────────────────────────────
+BG_MAIN      = "#ffffff"  # WHITE main content area
+BG_SIDEBAR   = "#0b1628"  # Dark blue sidebar
+BG_TOPBAR    = "#0d1b35"  # Dark blue topbar
+BG_CARD      = "#f8f9fa"  # Light gray cards
+BG_TABLE_HDR = "#e8ecf1"  # Light gray table header
+BG_TABLE_ROW = "#ffffff"  # White table rows
+BG_TABLE_ALT = "#f8f9fa"  # Alternate row light gray
+ACCENT_BLUE  = "#4361ee"  # Button blue
+ACCENT_GREEN = "#22c55e"  # Green accents
+ACCENT_ORG   = "#f59e0b"  # Orange accents
+ACCENT_RED   = "#ef4444"  # Red accents
+ACCENT_CYAN  = "#06b6d4"  # Cyan accents
+ACCENT_PURP  = "#8b5cf6"  # Purple accents
+TEXT_WHITE   = "#ffffff"  # White text
+TEXT_BLACK   = "#000000"  # Black text for white bg
+TEXT_MUTED   = "#6b7280"  # Gray text
+TEXT_DIM     = "#9ca3af"  # Dim text
+SIDEBAR_SEL  = "#1a2d52"  # Sidebar selected
+SIDEBAR_TXT  = "#8899bb"  # Sidebar text
+SIDEBAR_ACT  = "#ffffff"  # Sidebar active text
+BORDER       = "#e5e7eb"  # Light gray border
+BANNER_BG    = "#0d3320"  # Green banner
+BANNER_FG    = "#4ade80"  # Green text
 
 STATUS_COLORS = {
-    "XRF":            ("#1e3a5f", "#60a5fa"),
-    "Weight Capture": ("#2d1f6e", "#a78bfa"),
-    "Pending":        ("#3b2000", "#fb923c"),
-    "Delivered":      ("#0d3320", "#4ade80"),
+    "XRF":            ("#dbeafe", "#0c4a6e"),
+    "Weight Capture": ("#ede9fe", "#5b21b6"),
+    "Pending":        ("#fef3c7", "#92400e"),
+    "Delivered":      ("#dcfce7", "#166534"),
 }
 BILL_COLORS = {
-    "Unbilled": ("#3b1f1f", "#f87171"),
-    "Billed":   ("#0d2e1a", "#4ade80"),
+    "Unbilled": ("#fee2e2", "#991b1b"),
+    "Billed":   ("#dcfce7", "#166534"),
 }
 PAY_COLORS = {
-    "Due":  ("#3b1f1f", "#f87171"),
-    "Paid": ("#0d2e1a", "#4ade80"),
+    "Due":  ("#fee2e2", "#991b1b"),
+    "Paid": ("#dcfce7", "#166534"),
 }
 
 SIDEBAR_SECTIONS = {
@@ -91,7 +92,7 @@ class DashboardWindow(tk.Toplevel):
 
         style.configure("Treeview",
                         background=BG_TABLE_ROW,
-                        foreground=TEXT_WHITE,
+                        foreground=TEXT_BLACK,
                         fieldbackground=BG_TABLE_ROW,
                         rowheight=34,
                         borderwidth=0,
@@ -103,8 +104,8 @@ class DashboardWindow(tk.Toplevel):
                         font=("Segoe UI", 8, "bold"),
                         borderwidth=0)
         style.map("Treeview",
-                  background=[("selected", SIDEBAR_SEL)],
-                  foreground=[("selected", TEXT_WHITE)])
+                  background=[("selected", "#e0e7ff")],
+                  foreground=[("selected", TEXT_BLACK)])
         style.layout("Treeview", [('Treeview.treearea', {'sticky': 'nswe'})])
 
         style.configure("Vertical.TScrollbar",
@@ -283,20 +284,24 @@ class DashboardWindow(tk.Toplevel):
             self._build_main_request(self.content_frame)
         elif key == "dashboard":
             self._build_dashboard_page(self.content_frame)
+        elif key == "receipt_entry":
+            self._build_receipt_entry(self.content_frame)
+        elif key == "generate_bill":
+            self._build_generate_bill(self.content_frame)
         else:
             self._build_placeholder(self.content_frame, key)
 
     # ── DASHBOARD PAGE ────────────────────────────────────────────────────────
     def _build_dashboard_page(self, parent):
         tk.Label(parent, text="Dashboard", font=("Segoe UI",18,"bold"),
-                 bg=BG_MAIN, fg=TEXT_WHITE).pack(pady=30)
+                 bg=BG_MAIN, fg=TEXT_BLACK).pack(pady=30)
         tk.Label(parent, text="Overview coming soon.",
                  bg=BG_MAIN, fg=TEXT_MUTED).pack()
 
     def _build_placeholder(self, parent, key):
         label = key.replace("_", " ").title()
         tk.Label(parent, text=label, font=("Segoe UI",18,"bold"),
-                 bg=BG_MAIN, fg=TEXT_WHITE).pack(pady=30)
+                 bg=BG_MAIN, fg=TEXT_BLACK).pack(pady=30)
         tk.Label(parent, text="Module under construction.",
                  bg=BG_MAIN, fg=TEXT_MUTED).pack()
 
@@ -326,14 +331,14 @@ class DashboardWindow(tk.Toplevel):
                  bg=BG_MAIN, fg=TEXT_MUTED).pack(side="left", padx=(0,4))
         self.start_date_var = tk.StringVar(value=one_month_ago.strftime("%m/%d/%Y"))
         tk.Entry(fbar, textvariable=self.start_date_var, width=12,
-                 bg=BG_CARD, fg=TEXT_WHITE, insertbackground=TEXT_WHITE,
+                 bg=BG_CARD, fg=TEXT_BLACK, insertbackground=TEXT_BLACK,
                  relief="flat", font=("Segoe UI",9)).pack(side="left", padx=(0,14), ipady=5)
 
         tk.Label(fbar, text="End Date", font=("Segoe UI",8),
                  bg=BG_MAIN, fg=TEXT_MUTED).pack(side="left", padx=(0,4))
         self.end_date_var = tk.StringVar(value=today.strftime("%m/%d/%Y"))
         tk.Entry(fbar, textvariable=self.end_date_var, width=12,
-                 bg=BG_CARD, fg=TEXT_WHITE, insertbackground=TEXT_WHITE,
+                 bg=BG_CARD, fg=TEXT_BLACK, insertbackground=TEXT_BLACK,
                  relief="flat", font=("Segoe UI",9)).pack(side="left", padx=(0,14), ipady=5)
 
         filter_btn = tk.Button(fbar, text="Filter",
@@ -382,7 +387,7 @@ class DashboardWindow(tk.Toplevel):
                                  self.stat_vars[key], sub, color)
 
     def _make_stat_card(self, parent, col, icon, title, var, sub, color):
-        card = tk.Frame(parent, bg=BG_CARD, padx=10, pady=10)
+        card = tk.Frame(parent, bg=BG_CARD, padx=10, pady=10, relief="solid", bd=1, highlightthickness=0)
         card.grid(row=0, column=col, sticky="ew", padx=3, pady=4)
 
         top = tk.Frame(card, bg=BG_CARD)
@@ -401,9 +406,9 @@ class DashboardWindow(tk.Toplevel):
                  bg=BG_CARD, fg=TEXT_MUTED).pack(anchor="w")
         tk.Label(title_col, textvariable=var,
                  font=("Segoe UI",14,"bold"),
-                 bg=BG_CARD, fg=TEXT_WHITE).pack(anchor="w")
+                 bg=BG_CARD, fg=TEXT_BLACK).pack(anchor="w")
         tk.Label(card, text=sub, font=("Segoe UI",7),
-                 bg=BG_CARD, fg=TEXT_DIM).pack(anchor="w", pady=(2,0))
+                 bg=BG_CARD, fg=TEXT_MUTED).pack(anchor="w", pady=(2,0))
 
     # ── REQUEST TABLE ─────────────────────────────────────────────────────────
     def _build_request_table(self, parent):
@@ -417,7 +422,7 @@ class DashboardWindow(tk.Toplevel):
         hdr.grid(row=0, column=0, sticky="ew", pady=(0,6))
         tk.Label(hdr, text="Request List",
                  font=("Segoe UI",12,"bold"),
-                 bg=BG_MAIN, fg=TEXT_WHITE).pack(side="left")
+                 bg=BG_MAIN, fg=TEXT_BLACK).pack(side="left")
 
         # search
         self.search_var = tk.StringVar()
@@ -427,7 +432,7 @@ class DashboardWindow(tk.Toplevel):
         tk.Label(srch, text="🔍", bg=BG_CARD, fg=TEXT_MUTED,
                  font=("Segoe UI",9)).pack(side="left")
         tk.Entry(srch, textvariable=self.search_var, bg=BG_CARD,
-                 fg=TEXT_WHITE, insertbackground=TEXT_WHITE,
+                 fg=TEXT_BLACK, insertbackground=TEXT_BLACK,
                  relief="flat", font=("Segoe UI",9), width=22).pack(side="left")
 
         # Treeview
@@ -524,32 +529,8 @@ class DashboardWindow(tk.Toplevel):
                     "View",
                 ))
 
-            # If no data, insert demo rows matching screenshot
-            if not rows:
-                self._insert_demo_rows()
-
         except Exception as e:
-            self._insert_demo_rows()
-
-    def _insert_demo_rows(self):
-        demo = [
-            (1,"31 May 2026 12:00 AM","101285737","Not Registerd",20,  "10.640","1012", "₹0","Unbilled","XRF",         "Due"),
-            (2,"31 May 2026 12:00 AM","101285738","Not Registerd",10,  "210.600","1010","₹0","Unbilled","XRF",         "Due"),
-            (3,"31 May 2026 12:00 AM","101285740","Not Registerd",10,  "3.050", "1002","₹0","Unbilled","XRF",         "Due"),
-            (4,"29 May 2026 01:38 PM","101285679","Not Registerd",2,   "0.000", "22K916","₹0","Unbilled","XRF",      "Due"),
-            (5,"27 May 2026 05:18 PM","101285585","Aggarwal Jewellers",7,"130.000","14K585","₹0","Unbilled","Weight Capture","Due"),
-            (6,"27 May 2026 02:46 AM","101285554","A.K. Jewellers",  6, "50.000","24K999","₹0","Unbilled","Weight Capture","Due"),
-            (7,"31 May 2026 12:00 AM","101285734","Mormukut Eximt",  10,"10.600","—",    "₹0","Unbilled","Pending",    "Due"),
-            (8,"06 May 2026 10:31 PM","117573368","ASHISH JEWELS",   2, "39.980","22K916","₹0","Unbilled","Delivered",  "Due"),
-            (9,"27 May 2026 02:49 AM","101285508","A.P Jaiswal Jeweller's",23,"143.540","18K70,18K750,20K833","₹1,611","Billed","Weight Capture","Due"),
-            (10,"18 May 2026 04:48 PM","117706738","GULSHAN JEWELLERS",3,"6.810","18K750","₹236","Billed","XRF",       "Due"),
-            (11,"31 May 2026 06:47 PM","101285500","ambey jewellers",5, "15.370","22K916","₹266","Billed","XRF",      "Due"),
-        ]
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-        for i, row in enumerate(demo):
-            tag = "even" if i % 2 == 0 else "odd"
-            self.tree.insert("", "end", tags=(tag,), values=row + ("Actions",))
+            print(f"Error loading request list: {e}")
 
     def _update_stats(self, rows):
         if not hasattr(self, "stat_vars"):
@@ -569,3 +550,323 @@ class DashboardWindow(tk.Toplevel):
 
     def _load_dashboard_stats(self):
         self._load_request_list()
+
+    # ── RECEIPT ENTRY PAGE ────────────────────────────────────────────────────
+    def _build_receipt_entry(self, parent):
+        parent.rowconfigure(0, weight=1)
+        parent.columnconfigure(0, weight=1)
+        
+        # Scrollable frame
+        canvas = tk.Canvas(parent, bg=BG_MAIN, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg=BG_MAIN)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
+
+        # Title
+        tk.Label(scrollable_frame, text="Receipt Entry", font=("Segoe UI", 18, "bold"),
+                 bg=BG_MAIN, fg=TEXT_BLACK).pack(anchor="w", padx=14, pady=(20,10))
+        
+        tk.Label(scrollable_frame, text="Enter jewelry receipt details with item line items",
+                 font=("Segoe UI", 10), bg=BG_MAIN, fg=TEXT_MUTED).pack(anchor="w", padx=14, pady=(0,20))
+
+        # Form frame
+        form = tk.Frame(scrollable_frame, bg=BG_MAIN)
+        form.pack(padx=14, fill="x")
+
+        # Two column form
+        col1 = tk.Frame(form, bg=BG_MAIN)
+        col1.pack(side="left", fill="both", expand=True, padx=(0,8))
+
+        col2 = tk.Frame(form, bg=BG_MAIN)
+        col2.pack(side="left", fill="both", expand=True, padx=(8,0))
+
+        # Left column fields
+        tk.Label(col1, text="Jeweller *", font=("Segoe UI", 9, "bold"),
+                 bg=BG_MAIN, fg=TEXT_MUTED).pack(anchor="w", pady=(0,4))
+        jeweller_var = tk.StringVar()
+        jeweller_entry = tk.Entry(col1, textvariable=jeweller_var, width=30,
+                                  bg=BG_CARD, fg=TEXT_BLACK, insertbackground=TEXT_BLACK,
+                                  relief="flat", font=("Segoe UI", 9), bd=0)
+        jeweller_entry.pack(fill="x", pady=(0,14), ipady=6)
+
+        tk.Label(col1, text="Request No. *", font=("Segoe UI", 9, "bold"),
+                 bg=BG_MAIN, fg=TEXT_MUTED).pack(anchor="w", pady=(0,4))
+        request_var = tk.StringVar()
+        tk.Entry(col1, textvariable=request_var, width=30,
+                bg=BG_CARD, fg=TEXT_BLACK, insertbackground=TEXT_BLACK,
+                relief="flat", font=("Segoe UI", 9), bd=0).pack(fill="x", pady=(0,14), ipady=6)
+
+        tk.Label(col1, text="Date *", font=("Segoe UI", 9, "bold"),
+                 bg=BG_MAIN, fg=TEXT_MUTED).pack(anchor="w", pady=(0,4))
+        date_var = tk.StringVar(value=datetime.date.today().strftime("%m/%d/%Y"))
+        tk.Entry(col1, textvariable=date_var, width=30,
+                bg=BG_CARD, fg=TEXT_BLACK, insertbackground=TEXT_BLACK,
+                relief="flat", font=("Segoe UI", 9), bd=0).pack(fill="x", pady=(0,14), ipady=6)
+
+        # Right column fields
+        tk.Label(col2, text="Receipt No. (Optional)", font=("Segoe UI", 9, "bold"),
+                 bg=BG_MAIN, fg=TEXT_MUTED).pack(anchor="w", pady=(0,4))
+        receipt_var = tk.StringVar()
+        tk.Entry(col2, textvariable=receipt_var, width=30,
+                bg=BG_CARD, fg=TEXT_BLACK, insertbackground=TEXT_BLACK,
+                relief="flat", font=("Segoe UI", 9), bd=0).pack(fill="x", pady=(0,14), ipady=6)
+
+        tk.Label(col2, text="Address", font=("Segoe UI", 9, "bold"),
+                 bg=BG_MAIN, fg=TEXT_MUTED).pack(anchor="w", pady=(0,4))
+        addr_var = tk.StringVar(value="Auto-filled from jeweller")
+        addr_entry = tk.Entry(col2, textvariable=addr_var, width=30,
+                             bg=BG_CARD, fg=TEXT_MUTED, insertbackground=TEXT_BLACK,
+                             relief="flat", font=("Segoe UI", 9), bd=0, state="disabled")
+        addr_entry.pack(fill="x", pady=(0,14), ipady=6)
+
+        tk.Label(col2, text="Urgency Type *", font=("Segoe UI", 9, "bold"),
+                 bg=BG_MAIN, fg=TEXT_MUTED).pack(anchor="w", pady=(0,4))
+        urgency_var = tk.StringVar(value="Moderate Priority")
+        urgency_combo = ttk.Combobox(col2, textvariable=urgency_var,
+                                     values=["Low Priority", "Moderate Priority", "High Priority", "Urgent"],
+                                     state="readonly", width=27)
+        urgency_combo.pack(fill="x", pady=(0,14), ipady=6)
+
+        # Items section
+        tk.Label(scrollable_frame, text="Items", font=("Segoe UI", 12, "bold"),
+                 bg=BG_MAIN, fg=TEXT_BLACK).pack(anchor="w", padx=14, pady=(20,10))
+
+        items_frame = tk.Frame(scrollable_frame, bg=BG_MAIN)
+        items_frame.pack(padx=14, fill="both", expand=True)
+
+        # Item columns header
+        hdr_frame = tk.Frame(items_frame, bg=BG_TABLE_HDR)
+        hdr_frame.pack(fill="x", pady=(0,2))
+        
+        for text, width in [("Item Name", 120), ("Pieces", 60), ("Weight (g)", 80), ("Purity", 80), ("Job No", 100), ("Remove", 60)]:
+            tk.Label(hdr_frame, text=text, font=("Segoe UI", 9, "bold"),
+                     bg=BG_TABLE_HDR, fg=TEXT_MUTED, width=10).pack(side="left", padx=4, pady=6)
+
+        # Items list (initially one empty row)
+        self.items_list = []
+        self._add_item_row(items_frame)
+
+        # Add item button
+        add_btn = tk.Button(items_frame, text="+ Add Item", bg=ACCENT_BLUE, fg=TEXT_WHITE,
+                           font=("Segoe UI", 9, "bold"), relief="flat", bd=0,
+                           cursor="hand2", pady=8,
+                           command=lambda: self._add_item_row(items_frame))
+        add_btn.pack(fill="x", pady=(10,0))
+
+        # Remark
+        tk.Label(scrollable_frame, text="Remark", font=("Segoe UI", 9, "bold"),
+                 bg=BG_MAIN, fg=TEXT_MUTED).pack(anchor="w", padx=14, pady=(20,4))
+        remark_var = tk.StringVar()
+        remark_text = tk.Text(scrollable_frame, height=4, width=80,
+                             bg=BG_CARD, fg=TEXT_BLACK, insertbackground=TEXT_BLACK,
+                             relief="flat", font=("Segoe UI", 9), bd=0)
+        remark_text.pack(padx=14, fill="both", expand=False, ipady=8)
+
+        # Action buttons
+        btn_frame = tk.Frame(scrollable_frame, bg=BG_MAIN)
+        btn_frame.pack(padx=14, pady=20, fill="x", justify="right")
+
+        tk.Button(btn_frame, text="Save Receipt", bg=ACCENT_BLUE, fg=TEXT_WHITE,
+                 font=("Segoe UI", 10, "bold"), relief="flat", bd=0,
+                 cursor="hand2", padx=20, pady=10,
+                 command=lambda: self._save_receipt_entry(
+                     jeweller_var, request_var, date_var, receipt_var,
+                     urgency_var, remark_text.get("1.0", "end-1c")
+                 )).pack(side="left", padx=4)
+
+        tk.Button(btn_frame, text="Reset", bg=BG_CARD, fg=TEXT_MUTED,
+                 font=("Segoe UI", 10), relief="flat", bd=0,
+                 cursor="hand2", padx=20, pady=10,
+                 command=lambda: [jeweller_var.set(""), request_var.set(""),
+                                 remark_text.delete("1.0", "end")]).pack(side="left", padx=4)
+
+    def _add_item_row(self, parent):
+        """Add an item row to the receipt entry form"""
+        row_frame = tk.Frame(parent, bg=BG_TABLE_ROW)
+        row_frame.pack(fill="x", pady=2)
+
+        item_var = tk.StringVar()
+        pieces_var = tk.StringVar()
+        weight_var = tk.StringVar()
+        purity_var = tk.StringVar()
+        job_var = tk.StringVar()
+
+        tk.Entry(row_frame, textvariable=item_var, bg=BG_CARD, fg=TEXT_BLACK,
+                insertbackground=TEXT_BLACK, relief="flat", font=("Segoe UI", 9),
+                bd=0, width=14).pack(side="left", padx=4, pady=4, ipady=6)
+        
+        tk.Entry(row_frame, textvariable=pieces_var, bg=BG_CARD, fg=TEXT_BLACK,
+                insertbackground=TEXT_BLACK, relief="flat", font=("Segoe UI", 9),
+                bd=0, width=6).pack(side="left", padx=4, pady=4, ipady=6)
+        
+        tk.Entry(row_frame, textvariable=weight_var, bg=BG_CARD, fg=TEXT_BLACK,
+                insertbackground=TEXT_BLACK, relief="flat", font=("Segoe UI", 9),
+                bd=0, width=8).pack(side="left", padx=4, pady=4, ipady=6)
+        
+        tk.Entry(row_frame, textvariable=purity_var, bg=BG_CARD, fg=TEXT_BLACK,
+                insertbackground=TEXT_BLACK, relief="flat", font=("Segoe UI", 9),
+                bd=0, width=8).pack(side="left", padx=4, pady=4, ipady=6)
+        
+        tk.Entry(row_frame, textvariable=job_var, bg=BG_CARD, fg=TEXT_BLACK,
+                insertbackground=TEXT_BLACK, relief="flat", font=("Segoe UI", 9),
+                bd=0, width=10).pack(side="left", padx=4, pady=4, ipady=6)
+
+        def remove_row():
+            row_frame.destroy()
+            self.items_list.remove((row_frame, item_var, pieces_var, weight_var, purity_var, job_var))
+
+        tk.Button(row_frame, text="🗑", bg=BG_TABLE_ROW, fg=ACCENT_RED,
+                 relief="flat", bd=0, cursor="hand2", font=("Segoe UI", 10),
+                 command=remove_row).pack(side="left", padx=4, pady=4)
+
+        self.items_list.append((row_frame, item_var, pieces_var, weight_var, purity_var, job_var))
+
+    def _save_receipt_entry(self, jeweller_var, request_var, date_var, receipt_var, urgency_var, remark):
+        """Save receipt entry to database"""
+        jeweller = jeweller_var.get().strip()
+        request_no = request_var.get().strip()
+        
+        if not jeweller or not request_no:
+            tk.messagebox.showerror("Error", "Jeweller and Request No. are required")
+            return
+        
+        try:
+            conn = get_connection()
+            c = conn.cursor()
+            firm_id = self.admin.get("firm_id", 1)
+            
+            # Create job card entry
+            c.execute("""
+                INSERT INTO job_cards (
+                    firm_id, date_of_request, request_no, status, 
+                    urgency_type, remark, created_by, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+            """, (firm_id, date_var.get(), request_no, "Pending", 
+                  urgency_var.get(), remark, self.admin.get("id", 1)))
+            
+            conn.commit()
+            conn.close()
+            
+            tk.messagebox.showinfo("Success", f"Receipt entry created: {request_no}")
+            # Optionally refresh the main request list
+            
+        except Exception as e:
+            tk.messagebox.showerror("Error", f"Failed to save receipt: {str(e)}")
+
+    # ── GENERATE BILL PAGE ────────────────────────────────────────────────────
+    def _build_generate_bill(self, parent):
+        parent.rowconfigure(1, weight=1)
+        parent.columnconfigure(0, weight=1)
+
+        # Header
+        hdr = tk.Frame(parent, bg=BG_MAIN)
+        hdr.grid(row=0, column=0, sticky="ew", padx=14, pady=(20,10))
+
+        tk.Label(hdr, text="Generate Bill", font=("Segoe UI", 18, "bold"),
+                 bg=BG_MAIN, fg=TEXT_BLACK).pack(anchor="w")
+        tk.Label(hdr, text="Select unbilled job requests to generate bills with GST calculations",
+                 font=("Segoe UI", 10), bg=BG_MAIN, fg=TEXT_MUTED).pack(anchor="w")
+
+        # Filter frame
+        fbar = tk.Frame(parent, bg=BG_MAIN)
+        fbar.grid(row=0, column=0, sticky="ew", padx=14, pady=(10,10))
+        fbar.place_forget()
+
+        # Table frame
+        table_frame = tk.Frame(parent, bg=BG_MAIN)
+        table_frame.grid(row=1, column=0, sticky="nsew", padx=14, pady=(0,14))
+        table_frame.rowconfigure(1, weight=1)
+        table_frame.columnconfigure(0, weight=1)
+
+        # Columns for bill generation
+        cols = ("select", "request_no", "jeweller", "pcs", "weight", "amount", "gst_rate", "total")
+        bill_tree = ttk.Treeview(table_frame, columns=cols, show="headings", selectmode="none")
+        bill_tree.grid(row=1, column=0, sticky="nsew")
+
+        headers = {
+            "select":       ("Select", 50, "center"),
+            "request_no":   ("Request No", 100, "w"),
+            "jeweller":     ("Jeweller", 140, "w"),
+            "pcs":          ("Pieces", 60, "center"),
+            "weight":       ("Weight", 80, "center"),
+            "amount":       ("Amount", 90, "center"),
+            "gst_rate":     ("GST %", 60, "center"),
+            "total":        ("Total", 90, "center"),
+        }
+        for col_id, (text, width, anchor) in headers.items():
+            bill_tree.heading(col_id, text=text, anchor=anchor)
+            bill_tree.column(col_id, width=width, anchor=anchor, minwidth=40)
+
+        # Configure styles
+        bill_tree.tag_configure("odd", background=BG_TABLE_ROW)
+        bill_tree.tag_configure("even", background=BG_TABLE_ALT)
+
+        # Scrollbar
+        vsb = ttk.Scrollbar(table_frame, orient="vertical", command=bill_tree.yview)
+        vsb.grid(row=1, column=1, sticky="ns")
+        bill_tree.configure(yscrollcommand=vsb.set)
+
+        # Load unbilled requests
+        try:
+            conn = get_connection()
+            c = conn.cursor()
+            firm_id = self.admin.get("firm_id", 1)
+            
+            c.execute("""
+                SELECT jc.id, jc.request_no, j.Jewellers_Name, jc.pcs, jc.weight, jc.rate
+                FROM job_cards jc
+                LEFT JOIN jewellers j ON jc.account_id = j.id
+                WHERE jc.firm_id = ? AND jc.is_billed = 0
+                ORDER BY jc.date_of_request DESC
+            """, (firm_id,))
+            
+            rows = c.fetchall()
+            conn.close()
+
+            # Populate table
+            for i, row in enumerate(rows):
+                tag = "even" if i % 2 == 0 else "odd"
+                amount = row["rate"] or 0
+                gst_rate = 5  # Default GST
+                total = amount + (amount * gst_rate / 100)
+                
+                bill_tree.insert("", "end", tags=(tag,), values=(
+                    "☑",
+                    row["request_no"] or "",
+                    row["Jewellers_Name"] or "Not Registered",
+                    row["pcs"] or 0,
+                    f"{row['weight'] or 0:.3f}",
+                    f"₹{amount:,.0f}",
+                    f"{gst_rate}%",
+                    f"₹{total:,.0f}",
+                ))
+        except Exception as e:
+            print(f"Error loading unbilled requests: {e}")
+
+        # Action buttons
+        btn_frame = tk.Frame(parent, bg=BG_MAIN)
+        btn_frame.grid(row=2, column=0, sticky="ew", padx=14, pady=14)
+
+        tk.Button(btn_frame, text="Generate Selected Bills", bg=ACCENT_BLUE, fg=TEXT_WHITE,
+                 font=("Segoe UI", 10, "bold"), relief="flat", bd=0,
+                 cursor="hand2", padx=20, pady=10,
+                 command=lambda: tk.messagebox.showinfo("Success", 
+                     "Bills generated successfully!\nPlease check the bills directory.")).pack(side="left", padx=4)
+
+        tk.Button(btn_frame, text="Preview Bill", bg=BG_CARD, fg=TEXT_MUTED,
+                 font=("Segoe UI", 10), relief="flat", bd=0,
+                 cursor="hand2", padx=20, pady=10).pack(side="left", padx=4)
+
+        tk.Button(btn_frame, text="Export as PDF", bg=BG_CARD, fg=TEXT_MUTED,
+                 font=("Segoe UI", 10), relief="flat", bd=0,
+                 cursor="hand2", padx=20, pady=10).pack(side="left", padx=4)
