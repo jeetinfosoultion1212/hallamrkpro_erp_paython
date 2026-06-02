@@ -2,8 +2,8 @@ import tkinter as tk
 from tkinter import font as tkfont, ttk, messagebox, filedialog
 import threading
 import os, sys
-from PIL import Image, ImageDraw
 import hashlib
+import shutil
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from db.schema import get_connection
@@ -489,38 +489,23 @@ class RegisterWindow(tk.Tk):
             return {"ok": False, "error": f"Registration failed: {str(e)}"}
 
     def _save_logo(self, logo_path, phone):
-        """Save and convert logo to round shape"""
+        """Save logo to assets directory"""
         try:
+            # Get file extension
+            file_ext = os.path.splitext(logo_path)[1]
+            if not file_ext:
+                file_ext = ".png"
+            
             # Generate unique filename
-            filename = f"{phone}_logo.png"
+            filename = f"{phone}_logo{file_ext}"
             dest_path = os.path.join(self.logos_dir, filename)
 
-            # Open and process logo
-            img = Image.open(logo_path)
-            
-            # Convert to RGBA if needed
-            if img.mode != 'RGBA':
-                img = img.convert('RGBA')
-
-            # Resize to 300x300 (round logo)
-            size = (300, 300)
-            img = img.resize(size, Image.Resampling.LANCZOS)
-
-            # Create circular mask
-            mask = Image.new('L', size, 0)
-            draw = ImageDraw.Draw(mask)
-            draw.ellipse([0, 0, size[0] - 1, size[1] - 1], fill=255)
-
-            # Apply mask to make it circular
-            output = Image.new('RGBA', size, (255, 255, 255, 0))
-            output.paste(img, (0, 0), mask)
-
-            # Save
-            output.save(dest_path)
+            # Copy logo file
+            shutil.copy2(logo_path, dest_path)
             return dest_path
 
         except Exception as e:
-            raise Exception(f"Failed to process logo: {str(e)}")
+            raise Exception(f"Failed to save logo: {str(e)}")
 
     def _on_register_result(self, result):
         self.create_btn.config(state="normal", text="🏛  Create Account")

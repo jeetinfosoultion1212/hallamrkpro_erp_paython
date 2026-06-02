@@ -1,8 +1,12 @@
 import hashlib
-import requests
 import sqlite3
 import os
 import sys
+
+try:
+    import requests
+except ImportError:
+    requests = None
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from db.schema import get_connection
@@ -18,9 +22,9 @@ def cloud_verify(username: str, password_hash: str) -> dict:
     """
     Calls the cloud API to verify credentials.
     Returns {"success": True/False, "user": {...}} or raises on network error.
-    Falls back to local-only if CLOUD_SKIP env var is set.
+    Falls back to local-only if CLOUD_SKIP env var is set or requests unavailable.
     """
-    if os.environ.get("CLOUD_SKIP"):
+    if os.environ.get("CLOUD_SKIP") or requests is None:
         return {"success": True, "cloud": False}
     try:
         r = requests.post(
